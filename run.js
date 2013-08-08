@@ -1,16 +1,25 @@
 var basics = require('./build/Release/basics');
 
-var md5 = basics.md5;
-
-console.log(md5('abc'));
-process.exit();
+var arr = {0: true};
 
 var iter = 1e7;
+var t = process.hrtime();
 
-var time = process.hrtime();
 for (var i = 0; i < iter; i++) {
-  md5(i + '');
+  //new basics.BasicNew();
+  //new basics.ExternalNew();
+  //new basics.InternalNew();
+  //new JSNew(process.domain);
+  //basics.ArrayGet();
 }
-time = process.hrtime(time);
 
-console.log((time[0] * 1e9 + time[1]) / iter);
+t = process.hrtime(t);
+
+console.log(((t[0] * 1e9 + t[1]) / iter).toFixed(1) + ' ns/op');
+console.log((t[0] + t[1] / 1e9) + ' sec.');
+
+
+function JSNew() {
+  this.domain = process.domain;
+}
+/* */
