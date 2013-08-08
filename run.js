@@ -1,16 +1,17 @@
 var basics = require('./build/Release/basics');
 
-var arr = {0: true};
+var arrIndex = { 0: true };
+var arrName = { sym: true };
 
 var iter = 1e7;
 var t = process.hrtime();
 
 for (var i = 0; i < iter; i++) {
-  //new basics.BasicNew();
-  //new basics.ExternalNew();
-  //new basics.InternalNew();
-  //new JSNew(process.domain);
-  //basics.ArrayGet();
+  //basics.getPropIndex(arrIndex);
+  //basics.getPropName(arrName);
+
+  //basics.setPropIndex({});
+  //basics.setPropName({});
 }
 
 t = process.hrtime(t);

@@ -18,39 +18,29 @@ using v8::String;
 using v8::Value;
 
 
-Persistent<Array> p_array;
-char* data;
+Persistent<String> p_string;
 
 
-
-void ArrayGet(const FunctionCallbackInfo<Value>& args) {
-  args.GetReturnValue().Set(
-      (*reinterpret_cast<Local<Array>*>(&p_array))->Get(0));
+void GetPropIndex(const FunctionCallbackInfo<Value>& args) {
+  args[0].As<Object>()->Get(0);
 }
 
 
-void BasicNew(const FunctionCallbackInfo<Value>& args) {
-  assert(args.IsConstructCall());
+void GetPropName(const FunctionCallbackInfo<Value>& args) {
+  args[0].As<Object>()->Get(
+      *reinterpret_cast<Local<String>*>(&p_string));
 }
 
 
-void ExternalNew(const FunctionCallbackInfo<Value>& args) {
-  HandleScope scope(args.GetIsolate());
-  Local<Object> obj = args[0].As<Object>();
-  assert(!obj->HasIndexedPropertiesInExternalArrayData());
-  obj->SetIndexedPropertiesToExternalArrayData(
-      data, v8::kExternalUnsignedByteArray, 0);
-  obj->GetIndexedPropertiesExternalArrayData();
+void SetPropIndex(const FunctionCallbackInfo<Value>& args) {
+  args[0].As<Object>()->Set(0, True(args.GetIsolate()));
 }
 
 
-void InternalNew(const FunctionCallbackInfo<Value>& args) {
-  assert(args.IsConstructCall());
-  HandleScope scope(args.GetIsolate());
-  Local<Object> obj = args.This();
-  assert(obj->InternalFieldCount() > 0);
-  obj->SetAlignedPointerInInternalField(0, data);
-  obj->GetAlignedPointerFromInternalField(0);
+void SetPropName(const FunctionCallbackInfo<Value>& args) {
+  args[0].As<Object>()->Set(
+      *reinterpret_cast<Local<String>*>(&p_string),
+      True(args.GetIsolate()));
 }
 
 
@@ -58,28 +48,23 @@ void Initialize(Handle<Object> target) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
 
-  data = new char(8);
+  p_string.Reset(isolate, String::New("sym"));
 
-  Local<Array> array = Array::New();
-  array->Set(0, String::New("hello world"));
-  p_array.Reset(isolate, array);
+  Local<FunctionTemplate> t = FunctionTemplate::New(GetPropIndex);
+  t->SetClassName(String::New("getPropIndex"));
+  target->Set(String::New("getPropIndex"), t->GetFunction());
 
-  Local<FunctionTemplate> t = FunctionTemplate::New(ArrayGet);
-  t->SetClassName(String::New("ArrayGet"));
-  target->Set(String::New("ArrayGet"), t->GetFunction());
+  t = FunctionTemplate::New(GetPropName);
+  t->SetClassName(String::New("getPropName"));
+  target->Set(String::New("getPropName"), t->GetFunction());
 
-  t = FunctionTemplate::New(BasicNew);
-  t->SetClassName(String::New("BasicNew"));
-  target->Set(String::New("BasicNew"), t->GetFunction());
+  t = FunctionTemplate::New(SetPropIndex);
+  t->SetClassName(String::New("setPropIndex"));
+  target->Set(String::New("setPropIndex"), t->GetFunction());
 
-  t = FunctionTemplate::New(ExternalNew);
-  t->SetClassName(String::New("ExternalNew"));
-  target->Set(String::New("ExternalNew"), t->GetFunction());
-
-  t = FunctionTemplate::New(InternalNew);
-  t->SetClassName(String::New("InternalNew"));
-  t->InstanceTemplate()->SetInternalFieldCount(1);
-  target->Set(String::New("InternalNew"), t->GetFunction());
+  t = FunctionTemplate::New(SetPropName);
+  t->SetClassName(String::New("setPropName"));
+  target->Set(String::New("setPropName"), t->GetFunction());
 }
 
 
