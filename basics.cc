@@ -1,11 +1,13 @@
 #include <node.h>
 #include <v8.h>
 
-#include <njsutil.h>
+#include "njsutil.h"
 
 namespace basics {
 
 using v8::Array;
+using v8::Context;
+using v8::Function;
 using v8::FunctionCallbackInfo;
 using v8::FunctionTemplate;
 using v8::Handle;
@@ -17,30 +19,33 @@ using v8::Persistent;
 using v8::String;
 using v8::Value;
 
-
+Persistent<Array> p_array;
+Persistent<Function> p_function;
+Persistent<Object> p_object;
 Persistent<String> p_string;
 
 
-void GetPropIndex(const FunctionCallbackInfo<Value>& args) {
-  args[0].As<Object>()->Get(0);
+void Setup(const FunctionCallbackInfo<Value>& args) {
+  Local<Function> fn = args[0].As<Function>();
+  Local<Object> obj = args[1].As<Object>();
+  Local<Array> array = args[2].As<Array>();
+
+  if (!fn->IsFunction() || !obj->IsObject() || !array->IsArray())
+    njsutil::ThrowTypeError("Arguments are incorrect types");
+
+  Isolate* isolate = args.GetIsolate();
+
+  p_function.Reset(isolate, fn);
+  p_object.Reset(isolate, obj);
+  p_array.Reset(isolate, array);
 }
 
+void Run(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
 
-void GetPropName(const FunctionCallbackInfo<Value>& args) {
-  args[0].As<Object>()->Get(
-      *reinterpret_cast<Local<String>*>(&p_string));
-}
-
-
-void SetPropIndex(const FunctionCallbackInfo<Value>& args) {
-  args[0].As<Object>()->Set(0, True(args.GetIsolate()));
-}
-
-
-void SetPropName(const FunctionCallbackInfo<Value>& args) {
-  args[0].As<Object>()->Set(
-      *reinterpret_cast<Local<String>*>(&p_string),
-      True(args.GetIsolate()));
+  Local<Array> array = njsutil::PersistentToLocal(isolate, p_array);
+  array->Set(array->Length(), njsutil::PersistentToLocal(isolate, p_function));
+  array->Set(array->Length(), njsutil::PersistentToLocal(isolate, p_function));
 }
 
 
@@ -48,23 +53,15 @@ void Initialize(Handle<Object> target) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
 
-  p_string.Reset(isolate, String::New("sym"));
+  Local<FunctionTemplate> t;
 
-  Local<FunctionTemplate> t = FunctionTemplate::New(GetPropIndex);
-  t->SetClassName(String::New("getPropIndex"));
-  target->Set(String::New("getPropIndex"), t->GetFunction());
+  t = FunctionTemplate::New(Setup);
+  t->SetClassName(String::NewFromUtf8(isolate, "Setup"));
+  target->Set(String::NewFromUtf8(isolate, "setup"), t->GetFunction());
 
-  t = FunctionTemplate::New(GetPropName);
-  t->SetClassName(String::New("getPropName"));
-  target->Set(String::New("getPropName"), t->GetFunction());
-
-  t = FunctionTemplate::New(SetPropIndex);
-  t->SetClassName(String::New("setPropIndex"));
-  target->Set(String::New("setPropIndex"), t->GetFunction());
-
-  t = FunctionTemplate::New(SetPropName);
-  t->SetClassName(String::New("setPropName"));
-  target->Set(String::New("setPropName"), t->GetFunction());
+  t = FunctionTemplate::New(Run);
+  t->SetClassName(String::NewFromUtf8(isolate, "run"));
+  target->Set(String::NewFromUtf8(isolate, "run"), t->GetFunction());
 }
 
 
