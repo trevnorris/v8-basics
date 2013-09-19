@@ -20,7 +20,6 @@ using v8::String;
 using v8::Value;
 
 Persistent<Function> p_function;
-Persistent<Object> p_global;
 
 
 void Setup(const FunctionCallbackInfo<Value>& args) {
@@ -35,18 +34,14 @@ void Setup(const FunctionCallbackInfo<Value>& args) {
 }
 
 void Run(const FunctionCallbackInfo<Value>& args) {
-  Isolate* isolate = args.GetIsolate();
-
-  njsutil::PersistentToLocal(isolate, p_function)->Call(
-      njsutil::PersistentToLocal(isolate, p_global), 0, NULL);
+  args.GetReturnValue().Set(
+      njsutil::PersistentToLocal(args.GetIsolate(), p_function));
 }
 
 
 void Initialize(Handle<Object> target) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
-
-  p_global.Reset(isolate, Context().GetCurrent()->Global());
 
   Local<FunctionTemplate> t;
 

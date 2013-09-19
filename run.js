@@ -11,7 +11,7 @@ basics.setup(noop);
 t = process.hrtime();
 
 for (var i = 0; i < iter; i++) {
-  basics.run();
+  basics.run()();
 }
 
 t = process.hrtime(t);
