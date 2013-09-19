@@ -19,33 +19,26 @@ using v8::Persistent;
 using v8::String;
 using v8::Value;
 
-Persistent<Array> p_array;
 Persistent<Function> p_function;
-Persistent<Object> p_object;
-Persistent<String> p_string;
+Persistent<Object> p_global;
 
 
 void Setup(const FunctionCallbackInfo<Value>& args) {
   Local<Function> fn = args[0].As<Function>();
-  Local<Object> obj = args[1].As<Object>();
-  Local<Array> array = args[2].As<Array>();
 
-  if (!fn->IsFunction() || !obj->IsObject() || !array->IsArray())
+  if (!fn->IsFunction())
     njsutil::ThrowTypeError("Arguments are incorrect types");
 
   Isolate* isolate = args.GetIsolate();
 
   p_function.Reset(isolate, fn);
-  p_object.Reset(isolate, obj);
-  p_array.Reset(isolate, array);
 }
 
 void Run(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
 
-  Local<Array> array = njsutil::PersistentToLocal(isolate, p_array);
-  array->Set(array->Length(), njsutil::PersistentToLocal(isolate, p_function));
-  array->Set(array->Length(), njsutil::PersistentToLocal(isolate, p_function));
+  njsutil::PersistentToLocal(isolate, p_function)->Call(
+      njsutil::PersistentToLocal(isolate, p_global), 0, NULL);
 }
 
 
@@ -53,10 +46,12 @@ void Initialize(Handle<Object> target) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
 
+  p_global.Reset(isolate, Context().GetCurrent()->Global());
+
   Local<FunctionTemplate> t;
 
   t = FunctionTemplate::New(Setup);
-  t->SetClassName(String::NewFromUtf8(isolate, "Setup"));
+  t->SetClassName(String::NewFromUtf8(isolate, "setup"));
   target->Set(String::NewFromUtf8(isolate, "setup"), t->GetFunction());
 
   t = FunctionTemplate::New(Run);
